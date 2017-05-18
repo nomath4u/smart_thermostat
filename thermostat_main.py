@@ -30,6 +30,18 @@ def is_deviated(t):
 		return target_temp - t
 	else:
 		return False
+
+def is_at_temp(t):
+	if heating and ( t > target_temp ):
+		return True
+	if cooling and ( t < target_temp ):
+		return True
+	if not heating and not cooling:
+		print "is_at_temp is being used incorrectly"
+		return True
+	return False	
+		
+
 #Assumes fan is on OUTPUT 1
 def fan_on():
 	automationhat.output.one.on()
@@ -44,8 +56,8 @@ def furnace_off():
 	automationhat.relay.one.off()
 
 def heat_up():
-	fan_on()
-	time.sleep(fan_dwell)
+#	fan_on()
+#	time.sleep(fan_dwell)
 	furnace_on()
 
 def cool_down():
@@ -53,7 +65,7 @@ def cool_down():
 
 def turn_off():
 	furnace_off()
-	time.sleep(fan_dwell)
+#	time.sleep(fan_dwell)
 	fan_off()
 
 sensor = MCP9808.MCP9808()
@@ -85,7 +97,8 @@ while True:
 			heating = True
 			thread.start_new_thread(heat_up, ())
   else:
-	if operating: #We are in range now but still operating, turn things off
+	if operating and is_at_temp(temp): #We are in range now but still operating, turn things off
+		
 		print "Now in range, shutting down"
 		thread.start_new_thread(turn_off, ())
 		heating = False
