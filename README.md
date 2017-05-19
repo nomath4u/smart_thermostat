@@ -35,15 +35,25 @@ There are two helper scripts to turn on the heat and cooling. Use these to ensur
 These are 24V lines. Make sure when dealing with the thermostat you are always working through the
 pHat. Otherwise you are going to blow up part of your Pi.
 
-All nputs and relays default to ground or their normal positions upon losing power. If you work with this setup, then in the case of failure your thermostat will stay off.
+All inputs and relays default to ground or their normal positions upon losing power. If you work with this setup, then in the case of failure your thermostat will stay off.
 
 ## Upcoming features:
 	io.adafruit.com data tracking
 	pushbullet notifications
-	temperature setpoint control without restart
 	Location based input (maybe, this may be out of the scope of this)
 
 ## Dependancies
 * Requires that the adafruit MCP9808 python library is installed. [Adafruit MCP9808](https://github.com/adafruit/Adafruit_Python_MCP9808)
 * Requires the automation pHat is installed. [pHat](https://github.com/pimoroni/automation-hat)
 
+Requires that you have a mosquitto server running. You may want this on this pi or you might want it elsewhere. Just know where it is
+
+## Example Config file
+
+You will need a config file to get MQTT working with this A skeleton one is provided below. It is a normal config that can be parsed by the ConfigParser modules
+
+[MQTT]
+broker_ip = 
+broker_user = 
+broker_pass = 
+broker_topic =

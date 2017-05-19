@@ -8,17 +8,14 @@
 # with in here for the type of temperature
 # you would like to hold
 #
-# Currently changing the target temperature is
-# not supported without restarting.
-# Also, eventually this should be split
-# into multiple threads for reading temp
-# and performing tasks.
 ##########################################
 
 import automationhat
 import thread
 import time
 import Adafruit_MCP9808.MCP9808 as MCP9808
+import paho.mqtt.client as mqtt
+import ConfigParser
 
 def c_to_f(c):
 	return c * 9.0 / 5.0 +32 #Mostly need this for verification 
@@ -68,6 +65,36 @@ def turn_off():
 #	time.sleep(fan_dwell)
 	fan_off()
 
+def set_target_temp(t):
+	global target_temp
+	target_temp = t
+
+def on_connect(client, userdata, flags, rc):
+	client.subscribe(topic)
+
+def on_message(client, userdata,msg):
+	global temp_changed
+	set_target_temp(int(msg.payload))
+	print("got a message")
+	temp_changed = True
+
+#Config file stuff
+Config = ConfigParser.ConfigParser()
+Config.read("./config.conf")
+
+#Mosquitto settings
+broker = Config.get("MQTT", "broker_ip") 
+broker_port = 1883
+broker_user = Config.get("MQTT", "broker_user") 
+brokerpass = Config.get("MQTT", "broker_pass") 
+topic = Config.get("MQTT", "broker_topic") 
+timeout= 120
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+client.connect(broker, broker_port, timeout)
+
+
 sensor = MCP9808.MCP9808()
 sensor.begin()
 target_temp = 21.11 #Value is in Celcius
@@ -77,15 +104,21 @@ fan_dwell = (1 * 60) #How long to keep the fan on before and after furnace (seco
 operating = False #This is safe because values are grounded on phat when script stops
 heating = False
 cooling = False
+temp_changed = False #Indicator that the set temperature needs to be serviced
 
 while True:
+  #Need to periodically check MQTT without blocking
+  client.loop(timeout=1.0, max_packets=1)
+
   temp = sensor.readTempC()
   print('Temperature: {0:0.3F}*C'.format(temp) )
-  print('In range? ' + str(is_deviated(temp)))
+  print('Target: {0:0.3F}*C'.format(target_temp))
+#  print('In range? ' + str(is_deviated(temp)))
   print('Heating? ' + str(heating))
   print('Cooling? ' + str(cooling))
+  print('Temp Changed? ' + str(temp_changed))
   deviated = is_deviated(temp)
-  if deviated is not False:
+  if deviated is not False and temp_changed is False:
 	if not operating: #Don't need to do it again if we are already doing something 
 		operating = True #Make sure we know we need to turn off
 		if deviated < 0: #Too hot cool down
@@ -97,12 +130,13 @@ while True:
 			heating = True
 			thread.start_new_thread(heat_up, ())
   else:
-	if operating and is_at_temp(temp): #We are in range now but still operating, turn things off
+	if operating and (is_at_temp(temp) or temp_changed): #We are in range now but still operating, turn things off
 		
 		print "Now in range, shutting down"
 		thread.start_new_thread(turn_off, ())
 		heating = False
 		cooling = False
+		temp_changed = False
   operating = heating or cooling
   #for clairity in the output
   print()
