@@ -52,8 +52,8 @@ Requires that you have a mosquitto server running. You may want this on this pi 
 
 You will need a config file to get MQTT working with this A skeleton one is provided below. It is a normal config that can be parsed by the ConfigParser modules
 
-[MQTT]
-broker_ip = 
-broker_user = 
-broker_pass = 
-broker_topic =
+	[MQTT]
+	broker_ip = 
+	broker_user = 
+	broker_pass = 
+	broker_topic =
