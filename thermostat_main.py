@@ -74,7 +74,7 @@ def on_connect(client, userdata, flags, rc):
 
 def on_message(client, userdata,msg):
 	global temp_changed
-	set_target_temp(int(msg.payload))
+	set_target_temp(float(msg.payload))
 	print("got a message")
 	temp_changed = True
 
