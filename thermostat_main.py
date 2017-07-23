@@ -75,6 +75,9 @@ def on_message(client, userdata,msg):
 	print("got a message")
 	temp_changed = True
 
+def send_temp(temp):
+        client.publish(cur_temp_topic, payload=round(temp,1))
+
 #Config file stuff
 Config = ConfigParser.ConfigParser()
 Config.read("./config.conf")
@@ -85,6 +88,7 @@ broker_port = 1883
 broker_user = Config.get("MQTT", "broker_user") 
 brokerpass = Config.get("MQTT", "broker_pass") 
 topic = Config.get("MQTT", "broker_topic") 
+cur_temp_topic = Config.get("MQTT", "broker_cur_temp_topic")
 timeout= 120
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -111,6 +115,7 @@ while True:
   client.loop(timeout=1.0, max_packets=1)
 
   temp = sensor.readTempC()
+  send_temp(temp)
   print('Temperature: {0:0.3F}*C'.format(temp) )
   print('Target: {0:0.3F}*C'.format(target_temp))
 #  print('In range? ' + str(is_deviated(temp)))
@@ -124,7 +129,7 @@ while True:
 		if deviated < 0: #Too hot cool down
 			print "Cooling down"
 			cooling = True
-			thread.start_new_thread(cool_down, ())
+			#TODO Disabled for now #thread.start_new_thread(cool_down, ())
 		else: #Too cold, heat up
 			print "Heating up"
 			heating = True

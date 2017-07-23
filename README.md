@@ -57,3 +57,4 @@ You will need a config file to get MQTT working with this A skeleton one is prov
 	broker_user = 
 	broker_pass = 
 	broker_topic =
+        broker_cur_temp_topic = 
