@@ -53,8 +53,6 @@ def furnace_off():
 	automationhat.relay.one.off()
 
 def heat_up():
-#	fan_on()
-#	time.sleep(fan_dwell)
 	furnace_on()
 
 def cool_down():
@@ -62,7 +60,6 @@ def cool_down():
 
 def turn_off():
 	furnace_off()
-#	time.sleep(fan_dwell)
 	fan_off()
 
 def set_target_temp(t):
@@ -94,6 +91,9 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.connect(broker, broker_port, timeout)
 
+#Start with everything off
+furnace_off()
+fan_off()
 
 sensor = MCP9808.MCP9808()
 sensor.begin()
