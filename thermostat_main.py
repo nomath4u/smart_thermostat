@@ -109,7 +109,10 @@ timeout= 10
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
-client.connect(broker, broker_port, timeout)
+try:
+  client.connect(broker, broker_port, timeout)
+except:
+  pass
 
 #Start with everything off
 furnace_off()
