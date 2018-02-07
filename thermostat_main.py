@@ -17,6 +17,9 @@ import time
 import Adafruit_MCP9808.MCP9808 as MCP9808
 import paho.mqtt.client as mqtt
 import ConfigParser
+import os.path
+
+tempfile = "./.tempfile"
 
 def c_to_f(c):
 	return c * 9.0 / 5.0 +32 #Mostly need this for verification 
@@ -31,17 +34,19 @@ def c_to_f(c):
 #                print "Not deviated"
 #		return False
 def is_deviated_heat(t):
-   	if (target_temp - t ) > temp_slop:
+        tt = get_target_temp()
+   	if (tt - t ) > temp_slop:
                 print "Deviated"
-		return target_temp - t
+		return tt - t
 	else:
                 print "Not deviated"
 		return False
 
 def is_at_temp(t):
-	if heating and ( t > target_temp ):
+        set_temp = get_target_temp()
+	if heating and ( t > set_temp ):
 		return True
-	if cooling and ( t < target_temp ):
+	if cooling and ( t < set_temp ):
 		return True
 	if not heating and not cooling:
 		print "is_at_temp is being used incorrectly"
@@ -73,8 +78,11 @@ def turn_off():
 	fan_off()
 
 def set_target_temp(t):
-	global target_temp
-	target_temp = t
+#	global target_temp
+#	target_temp = t
+  f = open(tempfile, 'w')
+  f.write(str(t)) # write a base temperature
+  f.close()
 
 def on_connect(client, userdata, flags, rc):
 	client.subscribe(topic)
@@ -94,6 +102,14 @@ def timer_timeout():
 	print "Timer ended"
 	send_temp(temp)
         timing = False
+
+def get_target_temp():
+        global tempfile
+        f = open(tempfile, 'r')
+        r = f.read()
+        f.close()
+        return float(r.strip('\n'))
+        
 #Config file stuff
 Config = ConfigParser.ConfigParser()
 Config.read("./config.conf")
@@ -120,7 +136,18 @@ fan_off()
 
 sensor = MCP9808.MCP9808()
 sensor.begin()
-target_temp = 23.11 #Value is in Celcius
+#try:
+#  f = open(tempfile, 'r')
+#except: # File doesn't exist
+#  f = open(tempfile,'r') # Should work this time since we just created it
+
+if not os.path.isfile(tempfile):
+  #f = open(tempfile, 'w')
+  #f.write("23.11") # write a base temperature
+  #f.close()
+  set_target_temp(23.11)
+
+target_temp = get_target_temp()
 temp_slop = 1.0 #How much on either side before we need to do something about it
 fan_dwell = (1 * 60) #How long to keep the fan on before and after furnace (seconds)
 
@@ -144,7 +171,7 @@ while True:
   temp = sensor.readTempC()
   send_temp(temp)
   print('Temperature: {0:0.3F}*C'.format(temp) )
-  print('Target: {0:0.3F}*C'.format(target_temp))
+  print('Target: {0:0.3F}*C'.format(get_target_temp()))
 #  print('In range? ' + str(is_deviated(temp)))
   print('Heating? ' + str(heating))
   print('Cooling? ' + str(cooling))
